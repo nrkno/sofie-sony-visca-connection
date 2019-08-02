@@ -4,6 +4,16 @@ import { AbstractCommand } from '../commands/index'
 import { ConnectionState, CommandType } from '../enums'
 import { ResetSequenceNumberCommand } from '../commands/control/resetSeqNumberCommand'
 
+interface QueuedCommand {
+	packetId: number
+	packet: Buffer
+	promise: {
+		resolve: (value?: any) => void
+		reject: (value?: any) => void
+	}
+	command: AbstractCommand
+}
+
 export class ViscaSocket extends EventEmitter {
 	private _debug = false
 	private _reconnectTimer: NodeJS.Timer | undefined
@@ -21,8 +31,8 @@ export class ViscaSocket extends EventEmitter {
 	private _inFlightTimeout = 1000
 	private _maxRetries = 5
 	private _lastReceivedAt: number = Date.now()
-	private _inFlight: { packetId: number, lastSent: number, packet: Buffer, resent: number } | undefined
-	private _queue: Array<{ packetId: number, packet: Buffer }> = []
+	private _inFlight: QueuedCommand & { lastSent: number, resent: number } | undefined
+	private _queue: Array<QueuedCommand> = []
 
 	constructor (options: { address?: string, port?: number, debug?: boolean, log?: (...args) => void }) {
 		super()
@@ -90,10 +100,6 @@ export class ViscaSocket extends EventEmitter {
 		// Will be re-assigned by the top-level class.
 	}
 
-	get nextPacketId (): number {
-		return this._localPacketId
-	}
-
 	public _sendCommand (command: AbstractCommand) {
 		const buffer = Buffer.alloc(8)
 		const payload = command.serialize()
@@ -102,14 +108,29 @@ export class ViscaSocket extends EventEmitter {
 		buffer.writeUInt16BE(payload.length, 2)
 		buffer.writeUInt32BE(this._localPacketId, 4)
 
-		this._queue.push({
+		const queueObject: QueuedCommand = {
+			command,
 			packetId: this._localPacketId,
-			packet: Buffer.from([ buffer, payload ])
+			packet: Buffer.from([ ...buffer, ...payload ]),
+			promise: {
+				resolve: () => null,
+				reject: () => null
+			}
+		}
+		const promise = new Promise<any>((resolve, reject) => {
+			queueObject.promise = {
+				resolve,
+				reject
+			}
 		})
+
+		this._queue.push(queueObject)
 
 		this._sendNextPacket()
 
 		this._localPacketId = (this._localPacketId++) % this._maxPacketID
+
+		return promise
 	}
 
 	private _createSocket () {
@@ -126,18 +147,25 @@ export class ViscaSocket extends EventEmitter {
 		const type = packet.readUInt16BE(0)
 		const length = packet.readUInt32BE(4)
 
-		if (type === CommandType.ViscaReply) {
-			// @todo: call parsing from command.
+		if (type === CommandType.ViscaReply && this._inFlight) {
+			// @todo: think about what resolves a command.
 			if (length === 3 && packet.readUInt8(8) === 0x41) {
 				// supposedly an ack
+				return // completion resolves, and not ack so we skip
 			} else if (length === 3 && packet.readUInt8(8) === 0x51) {
 				// supposedly a completion
+				this._inFlight.promise.resolve()
 			} else if (length === 4 && packet.readUInt16BE(8) === 0x6002) {
 				// supposedly a syntax error
-			} else if (length === 3 && packet.readUInt16BE(8) === 0x6141) {
+				this._inFlight.promise.reject(new Error('Syntax Error'))
+			} else if (length === 4 && packet.readUInt16BE(8) === 0x6141) {
 				// supposedly not executable
+				this._inFlight.promise.reject(new Error('Not executable'))
 			} else {
 				// maybe a inquisition reply?
+				if (this._inFlight.command.deserialize) {
+					this._inFlight.promise.resolve(this._inFlight.command.deserialize(packet.slice(8, 8 + length)))
+				}
 			}
 		} else if (type === CommandType.ControlReply) {
 			this._connectionState = ConnectionState.Connected
@@ -145,32 +173,8 @@ export class ViscaSocket extends EventEmitter {
 		}
 
 		this._inFlight = undefined
+		this._sendNextPacket()
 	}
-
-	// private _parseCommand (buffer: Buffer, packetId?: number) {
-	// 	const length = buffer.readUInt16BE(0)
-	// 	const name = buffer.toString('ascii', 4, 8)
-
-	// 	if (name === 'InCm') {
-	// 		this.emit('connect')
-	// 	}
-
-	// 	// this.log('COMMAND', `${name}(${length})`, buffer.slice(0, length))
-	// 	const cmd = this._commandParser.commandFromRawName(name)
-	// 	if (cmd && typeof cmd.deserialize === 'function') {
-	// 		try {
-	// 			cmd.deserialize(buffer.slice(0, length).slice(8))
-	// 			cmd.packetId = packetId || -1
-	// 			this.emit('receivedStateChange', cmd)
-	// 		} catch (e) {
-	// 			this.emit('error', e)
-	// 		}
-	// 	}
-
-	// 	if (buffer.length > length) {
-	// 		this._parseCommand(buffer.slice(length), packetId)
-	// 	}
-	// }
 
 	private _sendNextPacket () {
 		if (this._inFlight) return
@@ -201,7 +205,6 @@ export class ViscaSocket extends EventEmitter {
 				this.log('RESEND: ', this._inFlight)
 				this._sendPacket(this._inFlight.packet)
 			} else {
-				// this._inFlight.splice(this._inFlight.indexOf(this._inFlight), 1)
 				this.log('TIMED OUT: ', this._inFlight.packet)
 				// @todo: we should probably break up the connection here.
 				this._inFlight = undefined

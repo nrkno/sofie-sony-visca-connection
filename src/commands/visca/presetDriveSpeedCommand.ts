@@ -1,4 +1,4 @@
-import { ViscaCommand } from '..'
+import { ViscaCommand } from '../abstractCommand'
 
 export class PresetDriveSpeedCommand extends ViscaCommand {
 	memoryNumber: number

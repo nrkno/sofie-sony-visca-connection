@@ -1,4 +1,4 @@
-import { ViscaCommand } from '..'
+import { ViscaCommand } from '../abstractCommand'
 import { PanTiltDirection } from '../../enums'
 
 export class PanTiltDriveCommand extends ViscaCommand {

@@ -1,47 +1,41 @@
 import { EventEmitter } from 'events'
-import { createSocket, Socket } from 'dgram'
 import { AbstractCommand } from './commands'
-import { ResetSequenceNumberCommand } from './commands/control/resetSeqNumberCommand'
+import { ViscaSocket } from './lib/socket'
 
 export class ViscaDevice extends EventEmitter {
 	private _address: string
-	private _socket: Socket
-	private _socketCounter: number = 0
+	private _socket: ViscaSocket
 
 	constructor (address: string) {
 		super()
 		this._address = address
+		this._socket = new ViscaSocket({ address })
+
+		this._socket.on('connected', () => this.emit('connected'))
+		this._socket.on('disconnected', () => this.emit('disconnected'))
 	}
 
 	connect () {
-		if (this._socket) this._socket.unref()
-
-		this._socket = createSocket('udp4')
-		this._socket.bind()
-
-		this.sendCommand(new ResetSequenceNumberCommand())
-		this._socketCounter = 0
+		this._socket.connect(this._address)
 	}
 
 	disconnect () {
-		this._socket.unref()
+		this._socket.disconnect()
 	}
 
-	sendCommand (command: AbstractCommand) {
-		const buffer = Buffer.alloc(8)
-		const payload = command.serialize()
-
-		buffer.writeUInt16BE(command.commandType, 0)
-		buffer.writeUInt16BE(payload.length, 2)
-		buffer.writeUInt32BE(this._socketCounter, 4)
-
-		this._sendUdp(Buffer.from([ buffer, payload ]))
+	get address () {
+		return this._address
 	}
 
-	private _sendUdp (msg: Buffer, offset?: number, length?: number) {
-		if (offset && length) this._socket.send(msg, offset, length, 52381, this._address)
-		else this._socket.send(msg, 52381, this._address)
+	set address (address: string) {
+		if (address !== this._address) {
+			this._socket.disconnect()
+			this._address = address
+			this._socket.connect(address)
+		}
+	}
 
-		this._socketCounter = (this._socketCounter++) % 0xffffffff
+	sendCommand (command: AbstractCommand): Promise<any> {
+		return this._socket._sendCommand(command)
 	}
 }

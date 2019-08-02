@@ -1,4 +1,4 @@
-import { ControlCommand } from '..'
+import { ControlCommand } from '../abstractCommand'
 
 export class ResetSequenceNumberCommand extends ControlCommand {
 	serialize () {

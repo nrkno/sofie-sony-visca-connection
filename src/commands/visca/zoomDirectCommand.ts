@@ -1,4 +1,4 @@
-import { ViscaCommand } from '..'
+import { ViscaCommand } from '../abstractCommand'
 
 export class ZoomDirectCommand extends ViscaCommand {
 	position: number

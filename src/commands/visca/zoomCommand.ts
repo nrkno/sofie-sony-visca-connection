@@ -1,4 +1,4 @@
-import { ViscaCommand } from '..'
+import { ViscaCommand } from '../abstractCommand'
 import { ZoomDirection } from '../../enums'
 
 export class ZoomCommand extends ViscaCommand {

@@ -1,4 +1,4 @@
-import { ViscaCommand } from '..'
+import { ViscaCommand } from '../abstractCommand'
 import { PresetOperation } from '../../enums'
 
 export class PresetCommand extends ViscaCommand {

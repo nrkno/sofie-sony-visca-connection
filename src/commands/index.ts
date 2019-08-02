@@ -1,15 +1,6 @@
-import { CommandType } from '../enums'
+import * as ControlCommands from './control'
+import * as InquiryCommands from './inquiry'
+import * as ViscaCommands from './visca'
 
-export abstract class AbstractCommand {
-	abstract readonly commandType: CommandType
-
-	abstract serialize (): Buffer
-}
-
-export abstract class ViscaCommand extends AbstractCommand {
-	readonly commandType = CommandType.ViscaCommand
-}
-
-export abstract class ControlCommand extends AbstractCommand {
-	readonly commandType = CommandType.ControlCommand
-}
+export { ControlCommands, InquiryCommands, ViscaCommands }
+export * from './abstractCommand'
