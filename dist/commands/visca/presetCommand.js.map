@@ -1,0 +1,1 @@
+{"version":3,"file":"presetCommand.js","sourceRoot":"","sources":["../../../src/commands/visca/presetCommand.ts"],"names":[],"mappings":";;AAAA,wDAAiD;AAGjD,MAAa,aAAc,SAAQ,8BAAY;IAI9C,SAAS;QACR,OAAO,MAAM,CAAC,IAAI,CAAC;YAClB,IAAI,EAAE,IAAI,EAAE,IAAI,EAAE,IAAI;YACtB,IAAI,CAAC,SAAS,EAAE,IAAI,CAAC,YAAY;YACjC,IAAI;SAAE,CAAC,CAAA;IACT,CAAC;CACD;AAVD,sCAUC"}
