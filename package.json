@@ -1,7 +1,7 @@
 {
   "name": "sony-visca-connection",
   "version": "0.0.0",
-  "description": "Typescript Node.js library for connecting with a SONY VISCA PTZ camera",
+  "description": "Typescript Node.js library for connecting with a Sony VISCA PTZ camera",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "module": "dist/module/index.js",
@@ -9,17 +9,17 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nrkno/tv-automation-sony-visca-connection.git"
+    "url": "git+https://github.com/nrkno/sofie-sony-visca-connection.git"
   },
   "bugs": {
-    "url": "https://github.com/nrkno/tv-automation-sony-visca-connection/issues"
+    "url": "https://github.com/nrkno/sofie-sony-visca-connection/issues"
   },
-  "homepage": "https://github.com/nrkno/tv-automation-sony-visca-connection#readme",
+  "homepage": "https://github.com/nrkno/sofie-sony-visca-connection#readme",
   "contributors": [
     {
       "name": "Balte de Wit",
       "email": "balte@superfly.tv",
-      "url": "http://superfly.tv"
+      "url": "https://superfly.tv"
     }
   ],
   "scripts": {
