@@ -1,8 +1,6 @@
 
 # Sofie: The Modern TV News Studio Automation System (Sony VISCA connection library)
 
-[![CircleCI](https://circleci.com/gh/nrkno/tv-automation-sony-visca-connection.svg?style=svg)](https://circleci.com/gh/nrkno/tv-automation-sony-visca-connection)
-
 This library is used in the [**Sofie** TV News Studio Automation System](https://github.com/nrkno/Sofie-TV-automation/) for connecting to Sony VISCA PTZ devices.
 
 ## Technology highlights
